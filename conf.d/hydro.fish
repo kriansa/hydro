@@ -138,6 +138,7 @@ function _hydro_prompt --on-event fish_prompt
 end
 
 function _hydro_fish_exit --on-event fish_exit
+    command kill $_hydro_last_pid 2>/dev/null
     command rm -f $_hydro_git_file $_hydro_git_file.new
 end
 
