@@ -103,17 +103,17 @@ Modify variables using `set --universal` from the command line or `set --global`
 
 > Any argument accepted by [`set_color`](https://fishshell.com/docs/current/cmds/set_color.html).
 
-| Variable               | Type  | Description                    | Default              |
-| ---------------------- | ----- | ------------------------------ | -------------------- |
-| `hydro_color_pwd`      | color | Color of the pwd segment.      | `$fish_color_normal` |
-| `hydro_color_git`      | color | Color of the git segment.      | `$fish_color_normal` |
-| `hydro_color_start`    | color | Color of the start symbol.     | `$fish_color_normal` |
-| `hydro_color_error`    | color | Color of the error segment.    | `$fish_color_error`  |
-| `hydro_color_prompt`   | color | Color of the prompt symbol.    | `$fish_color_normal` |
-| `hydro_color_duration` | color | Color of the duration section. | `$fish_color_normal` |
-| `hydro_color_jobs`     | color | Color of the background jobs segment. | `$fish_color_normal` |
-| `hydro_color_git_ahead`  | color | Color of the ahead of your upstream marker.  | `green` |
-| `hydro_color_git_behind` | color | Color of the behind of your upstream marker. | `red`   |
+| Variable                 | Type  | Description                                  | Default              |
+| ------------------------ | ----- | -------------------------------------------- | -------------------- |
+| `hydro_color_pwd`        | color | Color of the pwd segment.                    | `$fish_color_normal` |
+| `hydro_color_git`        | color | Color of the git segment.                    | `$fish_color_normal` |
+| `hydro_color_start`      | color | Color of the start symbol.                   | `$fish_color_normal` |
+| `hydro_color_error`      | color | Color of the error segment.                  | `$fish_color_error`  |
+| `hydro_color_prompt`     | color | Color of the prompt symbol.                  | `$fish_color_normal` |
+| `hydro_color_duration`   | color | Color of the duration section.               | `$fish_color_normal` |
+| `hydro_color_jobs`       | color | Color of the background jobs segment.        | `$fish_color_normal` |
+| `hydro_color_git_ahead`  | color | Color of the ahead of your upstream marker.  | `green`              |
+| `hydro_color_git_behind` | color | Color of the behind of your upstream marker. | `red`                |
 
 ### Flags
 
@@ -200,21 +200,47 @@ The segment returns to `hydro_color_git` after each marker.
 
 > `↑1` is shown in `hydro_color_git_ahead` and `↓2` in `hydro_color_git_behind`.
 
-From [#69](https://github.com/jorgebucaran/hydro/pull/69), with the two variables
-reworked to take a color name like every other `hydro_color_*` variable. As submitted
-they held escape sequences and were reassigned on every startup, so a name printed
-literally and a user's own choice was overwritten.
+From [#69](https://github.com/jorgebucaran/hydro/pull/69), open upstream. The two
+variables were reworked to take a color name like every other `hydro_color_*` variable;
+as submitted they held escape sequences and were reassigned on every startup, so a name
+printed literally and a user's own choice was overwritten.
 
-### Upstream patches carried ahead of `f130b55`
+### The home directory is only substituted at the start of the path
 
-Pull requests that are open upstream and applied here.
+Upstream replaces the first occurrence of the home directory anywhere in the path, so a
+path that merely contains it somewhere in the middle gets rewritten too. The match is
+anchored to the beginning of the path here.
 
-| Change | Upstream | Why |
-| ------ | -------- | --- |
-| Anchor the home directory substitution to the start of the path | [#73](https://github.com/jorgebucaran/hydro/pull/73), fixes [#65](https://github.com/jorgebucaran/hydro/issues/65) | An unanchored match rewrote the first occurrence anywhere in the path, so `/tmp/Users/you/dir` displayed as `/tmp~/dir`. |
-| Separate the repository root with a non-printable sentinel | [#75](https://github.com/jorgebucaran/hydro/pull/75) | A `:` was used to mark the repository root before truncation, so any path containing a colon was corrupted. Uses `\x1e` instead. |
-| Kill the background Git job when the shell exits | [#72](https://github.com/jorgebucaran/hydro/pull/72) | The job outlived the shell that started it. |
-| Color the ahead and behind markers | [#69](https://github.com/jorgebucaran/hydro/pull/69) | See [above](#colored-ahead-and-behind-markers). |
+<pre>
+<b>~</b> ❱ cd /tmp/Users/you/dir
+/t/U/y/<b>dir</b> ❱ ⎢
+</pre>
+
+> Upstream displays that path as `/tmp~/dir`.
+
+From [#73](https://github.com/jorgebucaran/hydro/pull/73), open upstream, fixing
+[#65](https://github.com/jorgebucaran/hydro/issues/65).
+
+### Paths containing a colon are no longer corrupted
+
+The repository root is marked with a sentinel before the path is truncated, so the
+basename can be restored afterwards. Upstream marks it with `:`, which is a legal
+character in a path, so any path containing one came out mangled. This fork uses the
+non-printable `\x1e` instead.
+
+<pre>
+<b>~</b> ❱ cd /tmp/colon:repo/sub/dir
+/t/colon:repo/s/<b>dir</b> main ❱ ⎢
+</pre>
+
+From [#75](https://github.com/jorgebucaran/hydro/pull/75), open upstream.
+
+### The background Git job is killed when the shell exits
+
+Upstream leaves the job that reads the repository running after the shell that started
+it is gone. It is killed on exit here, alongside removing the shell's state file.
+
+From [#72](https://github.com/jorgebucaran/hydro/pull/72), open upstream.
 
 ## License
 
