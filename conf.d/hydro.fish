@@ -121,11 +121,11 @@ function _hydro_prompt --on-event fish_prompt
             switch \"\$behind \$ahead\"
                 case \" \" \"0 0\"
                 case \"0 *\"
-                    set upstream \" $hydro_color_git_ahead$hydro_symbol_git_ahead\$ahead\"
+                    set upstream \" $_hydro_color_git_ahead$hydro_symbol_git_ahead\$ahead$_hydro_color_git\"
                 case \"* 0\"
-                    set upstream \" $hydro_color_git_behind$hydro_symbol_git_behind\$behind\"
+                    set upstream \" $_hydro_color_git_behind$hydro_symbol_git_behind\$behind$_hydro_color_git\"
                 case \*
-                    set upstream \" $hydro_color_git_ahead$hydro_symbol_git_ahead\$ahead $hydro_color_git_behind$hydro_symbol_git_behind\$behind\"
+                    set upstream \" $_hydro_color_git_ahead$hydro_symbol_git_ahead\$ahead $_hydro_color_git_behind$hydro_symbol_git_behind\$behind$_hydro_color_git\"
             end
 
             _hydro_publish \"\$branch\$info\$upstream \"
@@ -180,10 +180,8 @@ function _hydro_uninstall --on-event hydro_uninstall
 end
 
 set --global hydro_color_normal (set_color normal)
-set --global hydro_color_git_ahead (set_color green)
-set --global hydro_color_git_behind (set_color red)
 
-for color in hydro_color_{pwd,git,error,prompt,duration,start,jobs}
+for color in hydro_color_{pwd,git,error,prompt,duration,start,jobs,git_ahead,git_behind}
     function $color --on-variable $color --inherit-variable color
         set --query $color && set --global _$color (set_color $$color)
     end && $color
@@ -198,6 +196,8 @@ function hydro_multiline --on-variable hydro_multiline
 end && hydro_multiline
 
 set --query hydro_color_error || set --global hydro_color_error $fish_color_error
+set --query hydro_color_git_ahead || set --global hydro_color_git_ahead green
+set --query hydro_color_git_behind || set --global hydro_color_git_behind red
 set --query hydro_symbol_prompt || set --global hydro_symbol_prompt ❱
 set --query hydro_symbol_git_dirty || set --global hydro_symbol_git_dirty •
 set --query hydro_symbol_git_ahead || set --global hydro_symbol_git_ahead ↑
