@@ -112,6 +112,8 @@ Modify variables using `set --universal` from the command line or `set --global`
 | `hydro_color_prompt`   | color | Color of the prompt symbol.    | `$fish_color_normal` |
 | `hydro_color_duration` | color | Color of the duration section. | `$fish_color_normal` |
 | `hydro_color_jobs`     | color | Color of the background jobs segment. | `$fish_color_normal` |
+| `hydro_color_git_ahead`  | color | Color of the ahead of your upstream marker.  | `green` |
+| `hydro_color_git_behind` | color | Color of the behind of your upstream marker. | `red`   |
 
 ### Flags
 
@@ -185,6 +187,34 @@ Colored with [`hydro_color_jobs`](#colors).
 When [`hydro_multiline`](#flags) is enabled, a blank line is printed above each
 prompt, skipping the first prompt of the session so a new shell does not open with a
 stray empty line.
+
+### Colored ahead and behind markers
+
+The ahead and behind markers are colored separately from the rest of the Git segment,
+through [`hydro_color_git_ahead`](#colors) and [`hydro_color_git_behind`](#colors).
+The segment returns to `hydro_color_git` after each marker.
+
+<pre>
+~/p/<b>hydro</b> main ↑1 ↓2 ❱ ⎢
+</pre>
+
+> `↑1` is shown in `hydro_color_git_ahead` and `↓2` in `hydro_color_git_behind`.
+
+From [#69](https://github.com/jorgebucaran/hydro/pull/69), with the two variables
+reworked to take a color name like every other `hydro_color_*` variable. As submitted
+they held escape sequences and were reassigned on every startup, so a name printed
+literally and a user's own choice was overwritten.
+
+### Upstream patches carried ahead of `f130b55`
+
+Pull requests that are open upstream and applied here.
+
+| Change | Upstream | Why |
+| ------ | -------- | --- |
+| Anchor the home directory substitution to the start of the path | [#73](https://github.com/jorgebucaran/hydro/pull/73), fixes [#65](https://github.com/jorgebucaran/hydro/issues/65) | An unanchored match rewrote the first occurrence anywhere in the path, so `/tmp/Users/you/dir` displayed as `/tmp~/dir`. |
+| Separate the repository root with a non-printable sentinel | [#75](https://github.com/jorgebucaran/hydro/pull/75) | A `:` was used to mark the repository root before truncation, so any path containing a colon was corrupted. Uses `\x1e` instead. |
+| Kill the background Git job when the shell exits | [#72](https://github.com/jorgebucaran/hydro/pull/72) | The job outlived the shell that started it. |
+| Color the ahead and behind markers | [#69](https://github.com/jorgebucaran/hydro/pull/69) | See [above](#colored-ahead-and-behind-markers). |
 
 ## License
 
