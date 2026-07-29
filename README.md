@@ -9,8 +9,11 @@
 Install with [Fisher](https://github.com/jorgebucaran/fisher):
 
 ```console
-fisher install jorgebucaran/hydro
+fisher install kriansa/hydro
 ```
+
+> This is a fork of [jorgebucaran/hydro](https://github.com/jorgebucaran/hydro). See
+> [Fork changes](#fork-changes) for what differs from upstream.
 
 ## Features
 
@@ -108,6 +111,7 @@ Modify variables using `set --universal` from the command line or `set --global`
 | `hydro_color_error`    | color | Color of the error segment.    | `$fish_color_error`  |
 | `hydro_color_prompt`   | color | Color of the prompt symbol.    | `$fish_color_normal` |
 | `hydro_color_duration` | color | Color of the duration section. | `$fish_color_normal` |
+| `hydro_color_jobs`     | color | Color of the background jobs segment. | `$fish_color_normal` |
 
 ### Flags
 
@@ -123,6 +127,64 @@ Modify variables using `set --universal` from the command line or `set --global`
 | `fish_prompt_pwd_dir_length`   | numeric | The number of characters to display when path shortening. Set it to `0` to display only the topmost (current) directory. | `1`     |
 | `hydro_ignored_git_paths`      | strings | Space separated list of paths where no git info should be displayed.                                                     | `""`    |
 | `hydro_cmd_duration_threshold` | numeric | Minimum command duration, in milliseconds, after which command duration is displayed.                                    | `1000`  |
+
+## Fork changes
+
+Everything below is specific to this fork. Forked from upstream at `f130b55`.
+
+### The Git segment no longer travels through a universal variable
+
+Upstream reads the repository in a background job and passes the result back to the
+shell by setting a universal variable named after the shell's process id. Fish saves
+every universal variable to `fish_variables`, so a shell running this prompt keeps
+rewriting that file for as long as it lives. That is invisible in a normal setup, but
+it makes `fish_variables` unusable as a versioned file, and shells that are killed
+outright leave their entry behind forever.
+
+This fork passes the result through a file private to the shell, at
+`$XDG_RUNTIME_DIR/hydro-<pid>` (falling back to `$TMPDIR`, then `/tmp`). The
+background job writes the file and sends `SIGUSR1`; the shell reads it and repaints.
+No universal variable is ever written. The file is removed when the shell exits and on
+`hydro_uninstall`, and it is truncated at startup so a recycled process id cannot
+inherit a previous shell's branch.
+
+The variable holding the rendered segment is `$_hydro_git_value`, replacing upstream's
+`$$_hydro_git` indirection. A prompt that renders the Git segment must use the new
+name.
+
+A shell killed with `SIGKILL` leaves a small file behind, in a directory the operating
+system already cleans.
+
+### The path segment is no longer rebuilt on every prompt
+
+Upstream rebuilds the path segment whenever `fish_prompt_pwd_dir_length` changes, so a
+new value is picked up immediately. Fish's default `fish_title` calls `prompt_pwd` on
+every prompt, and `prompt_pwd` assigns that same variable as a **local**, which fish
+reports to the handler exactly like a real change. Rebuilding the segment runs
+`git rev-parse`, so upstream waits on a git process before each prompt can appear.
+
+A local assignment cannot be distinguished from a global one inside the handler, so
+this fork stops watching that variable and reads it when the path is built instead.
+The path is rebuilt on `cd` and when `hydro_ignored_git_paths` changes.
+
+Consequence: changing `fish_prompt_pwd_dir_length` in a running shell takes effect on
+the next `cd` rather than immediately. Setting it in `config.fish` behaves as before.
+
+### Background jobs segment
+
+Displays the number of running background jobs, excluding the prompt's own Git job.
+Colored with [`hydro_color_jobs`](#colors).
+
+<pre>
+~/p/<b>hydro</b> main ❱ sleep 30 &
+~/p/<b>hydro</b> main <b>[1]</b> ❱ ⎢
+</pre>
+
+### Blank line between commands
+
+When [`hydro_multiline`](#flags) is enabled, a blank line is printed above each
+prompt, skipping the first prompt of the session so a new shell does not open with a
+stray empty line.
 
 ## License
 
