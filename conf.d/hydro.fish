@@ -135,6 +135,13 @@ function _hydro_prompt --on-event fish_prompt
     " &
 
     set --global _hydro_last_pid $last_pid
+
+    # Fish refuses the first attempt to exit while one of its background jobs is still
+    # running, and this one is if the shell is closed right after a prompt appears.
+    # Taking it off the job list lets the shell exit at once. The job does not outlive
+    # it, because the job and its git commands run in the shell's process group, and
+    # the system hangs up that whole group when the shell owning the terminal exits.
+    disown $last_pid
 end
 
 function _hydro_fish_exit --on-event fish_exit
@@ -145,9 +152,6 @@ end
 function _hydro_prompt_jobs --on-event fish_prompt
     set --local jobs (jobs -p)
     set --local njobs (count $jobs)
-
-    # The job that reads the repository is one of ours, not something the user started.
-    contains "$_hydro_last_pid" $jobs && set njobs (math $njobs - 1)
 
     if test $njobs -ge 1
         set --global _hydro_jobs "[$njobs] "

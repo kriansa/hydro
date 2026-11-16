@@ -242,6 +242,16 @@ it is gone. It is killed on exit here, alongside removing the shell's state file
 
 From [#72](https://github.com/jorgebucaran/hydro/pull/72), open upstream.
 
+### Exiting right after a prompt no longer warns about running jobs
+
+Fish refuses the first attempt to exit while a background job is running and
+lists it under "There are still jobs active". The Git job runs for a moment
+after every prompt, so exiting right after one, such as with a quick
+<kbd>Ctrl</kbd>+<kbd>D</kbd>, printed that warning for a job the user never
+started. The job is disowned here, so fish no longer counts it and the shell
+exits at once. It still does not outlive the shell; see
+[The background Git job is killed when the shell exits](#the-background-git-job-is-killed-when-the-shell-exits).
+
 ## License
 
 [MIT](LICENSE.md)
